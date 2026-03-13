@@ -39,13 +39,7 @@ export default function P2PChat({ isOpen, onClose, darkMode, connectedPeers }) {
   }, [messages]);
 
   const initPeer = () => {
-    const randomId = 'eversite-' + Math.random().toString(36).substr(2, 9);
-    
-    const peer = new Peer(randomId, {
-      host: '/',
-      port: '',
-      path: '/',
-      secure: false,
+    const peer = new Peer({
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
@@ -65,11 +59,6 @@ export default function P2PChat({ isOpen, onClose, darkMode, connectedPeers }) {
 
     peer.on('error', (err) => {
       console.error('PeerJS error:', err);
-      if (err.type === 'network' || err.type === 'server-error') {
-        const fallbackId = 'eversite-' + Math.random().toString(36).substr(2, 9);
-        setMyPeerId(fallbackId);
-        setOnlinePeers(1);
-      }
     });
 
     peerRef.current = peer;
@@ -108,42 +97,11 @@ export default function P2PChat({ isOpen, onClose, darkMode, connectedPeers }) {
   };
 
   const handleConnectToPeer = () => {
-    if (!targetPeerId.trim()) return;
+    if (!targetPeerId.trim() || !peerRef.current) return;
 
-    if (peerRef.current && peerRef.current.disconnected) {
-      const conn = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
-        ]
-      });
-      
-      const dataChannel = conn.createDataChannel('chat');
-      const mockConn = {
-        peer: targetPeerId,
-        open: false,
-        send: (data) => dataChannel.send(JSON.stringify(data)),
-        on: (event, handler) => {
-          if (event === 'open') {
-            dataChannel.onopen = () => {
-              mockConn.open = true;
-              handler();
-            };
-          } else if (event === 'data') {
-            dataChannel.onmessage = (e) => handler(JSON.parse(e.data));
-          } else if (event === 'close') {
-            dataChannel.onclose = handler;
-          }
-        }
-      };
-      
-      setupConnection(mockConn);
-      setTargetPeerId('');
-    } else if (peerRef.current) {
-      const conn = peerRef.current.connect(targetPeerId);
-      setupConnection(conn);
-      setTargetPeerId('');
-    }
+    const conn = peerRef.current.connect(targetPeerId);
+    setupConnection(conn);
+    setTargetPeerId('');
   };
 
   const handleSendMessage = (e) => {

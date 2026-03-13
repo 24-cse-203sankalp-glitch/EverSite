@@ -60,41 +60,25 @@ export default function VideosPage({ darkMode }) {
   const handleDownloadVideo = async (video) => {
     try {
       setIsSearching(true);
-      console.log('Downloading video:', video.id, 'from', VIDEO_SERVER_URL);
+      console.log('Saving video metadata:', video.id);
       
-      const response = await fetch(`${VIDEO_SERVER_URL}/api/download-video`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId: video.id })
-      });
+      const videoData = {
+        ...video,
+        downloadedAt: new Date().toISOString(),
+        youtubeUrl: `https://www.youtube.com/watch?v=${video.id}`,
+        embedUrl: `https://www.youtube.com/embed/${video.id}`,
+        cached: true,
+        offline: false
+      };
       
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('Download result:', result);
-      
-      if (result.success) {
-        const videoData = {
-          ...video,
-          downloadedAt: new Date().toISOString(),
-          localUrl: `${VIDEO_SERVER_URL}/api/video/${video.id}`,
-          cached: true,
-          offline: true
-        };
-        
-        await videoStore.setItem(video.id, videoData);
-        setDownloadedVideos(prev => [...prev, videoData]);
-        alert('Video downloaded successfully!');
-      } else {
-        alert('Download failed: ' + result.message);
-      }
+      await videoStore.setItem(video.id, videoData);
+      setDownloadedVideos(prev => [...prev, videoData]);
+      alert('Video saved! Will play from YouTube when online.');
       
       setIsSearching(false);
     } catch (error) {
-      console.error('Download failed:', error);
-      alert('Download failed: ' + error.message);
+      console.error('Save failed:', error);
+      alert('Save failed: ' + error.message);
       setIsSearching(false);
     }
   };
@@ -206,7 +190,7 @@ export default function VideosPage({ darkMode }) {
                     className="btn-primary w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    {downloadedVideos.some(v => v.id === video.id) ? 'Downloaded' : isSearching ? 'Downloading...' : 'Download for Offline'}
+                    {downloadedVideos.some(v => v.id === video.id) ? 'Saved' : isSearching ? 'Saving...' : 'Save Video'}
                   </button>
                 </div>
               </motion.div>
@@ -241,8 +225,8 @@ export default function VideosPage({ darkMode }) {
                   >
                     <Play className="w-16 h-16 text-white group-hover:scale-110 transition-transform" />
                   </button>
-                  <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
-                    Offline Ready
+                  <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                    Saved
                   </div>
                 </div>
                 <div className="p-4">
@@ -308,30 +292,13 @@ export default function VideosPage({ darkMode }) {
             </div>
             <div className="p-4">
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                {selectedVideo.offline && selectedVideo.localUrl ? (
-                  <video
-                    src={selectedVideo.localUrl}
-                    controls
-                    autoPlay
-                    className="w-full h-full"
-                  />
-                ) : navigator.onLine ? (
-                  <iframe
-                    src={selectedVideo.embedUrl || `https://www.youtube.com/embed/${selectedVideo.id}`}
-                    title={selectedVideo.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-full"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white">
-                    <div className="text-center">
-                      <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-semibold mb-2">Offline Mode</p>
-                      <p className="text-sm text-gray-400">Video not downloaded. Connect to internet to play.</p>
-                    </div>
-                  </div>
-                )}
+                <iframe
+                  src={selectedVideo.embedUrl || `https://www.youtube.com/embed/${selectedVideo.id}`}
+                  title={selectedVideo.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
               </div>
             </div>
           </motion.div>

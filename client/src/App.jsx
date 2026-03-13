@@ -90,11 +90,6 @@ function App() {
     if (success) {
       EverSiteCore.on('status-change', (data) => {
         setNetworkStatus(prev => ({ ...prev, isOnline: data.online }));
-        addNotification(
-          data.online ? 'success' : 'error',
-          data.online ? 'Connected' : 'Server Offline',
-          data.online ? 'Connected to server' : 'Running on P2P network'
-        );
       });
 
       EverSiteCore.on('peer-count', (count) => {
@@ -116,7 +111,7 @@ function App() {
       });
 
       EverSiteCore.on('chunk-received', (data) => {
-        addNotification('download', 'Data Received', `Downloaded ${data.chunkId}`);
+        // Silent
       });
     }
     

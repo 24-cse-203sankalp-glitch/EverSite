@@ -30,6 +30,7 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
       });
 
       newSocket.on('chat-message', (data) => {
+        console.log('Received message:', data);
         setMessages(prev => [...prev, {
           id: Date.now() + Math.random(),
           username: data.username,
@@ -65,13 +66,14 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (inputMessage.trim() && socket) {
+    if (inputMessage.trim() && socket && socket.connected) {
       const messageData = {
         username: username,
         message: inputMessage,
         timestamp: new Date().toISOString()
       };
 
+      console.log('Sending message:', messageData);
       socket.emit('chat-message', messageData);
       setInputMessage('');
     }

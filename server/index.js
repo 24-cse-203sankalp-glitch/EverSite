@@ -8,8 +8,11 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true
 });
 
 app.use(cors());
@@ -22,6 +25,9 @@ const siteData = new Map();
 io.on('connection', (socket) => {
   console.log(`✅ Peer connected: ${socket.id}`);
   
+  // Immediately broadcast peer count
+  io.emit('peer-count', peers.size + 1);
+  
   // Register peer
   socket.on('register-peer', (data) => {
     peers.set(socket.id, {
@@ -33,6 +39,14 @@ io.on('connection', (socket) => {
     
     // Broadcast updated peer count
     io.emit('peer-count', peers.size);
+    
+    // Send list of all other peers to this peer
+    const otherPeers = Array.from(peers.keys()).filter(id => id !== socket.id);
+    socket.emit('peer-list', otherPeers);
+    
+    // Notify all other peers about this new peer
+    socket.broadcast.emit('new-peer', socket.id);
+    
     console.log(`📊 Active peers: ${peers.size}`);
   });
 

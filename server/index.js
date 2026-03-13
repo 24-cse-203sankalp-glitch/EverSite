@@ -59,10 +59,15 @@ io.on('connection', (socket) => {
   });
 
   // Chat message relay
+  socket.on('join-chat', (data) => {
+    peers.set(socket.id, { ...peers.get(socket.id), username: data.username });
+    io.emit('user-count', peers.size);
+    console.log(`👤 ${data.username} joined chat`);
+  });
+
   socket.on('chat-message', (data) => {
-    // Broadcast to all other clients
-    socket.broadcast.emit('chat-message', data);
-    console.log(`💬 Chat message from ${data.username}: ${data.message}`);
+    io.emit('chat-message', data);
+    console.log(`💬 ${data.username}: ${data.message}`);
   });
 
   // Store site data from peers

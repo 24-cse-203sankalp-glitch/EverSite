@@ -13,6 +13,14 @@ if (!fs.existsSync(VIDEOS_DIR)) {
   fs.mkdirSync(VIDEOS_DIR);
 }
 
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Video server running' });
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', uptime: process.uptime() });
+});
+
 app.post('/api/download-video', async (req, res) => {
   try {
     const { videoId } = req.body;

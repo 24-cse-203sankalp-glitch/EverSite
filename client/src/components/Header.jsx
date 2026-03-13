@@ -1,4 +1,4 @@
-import { Shield, Wifi, WifiOff, Users, Database, Moon, Sun } from 'lucide-react';
+import { Shield, Wifi, WifiOff, Users, Database, Moon, Sun, ExternalLink } from 'lucide-react';
 
 export default function Header({ networkStatus, onCacheSite, onRefresh, darkMode, onToggleDarkMode, onNavigateHome }) {
   return (
@@ -57,6 +57,23 @@ export default function Header({ networkStatus, onCacheSite, onRefresh, darkMode
                     </p>
                   </div>
                 </div>
+
+                {networkStatus.ipfsHash && (
+                  <>
+                    <div className="w-px h-8 bg-gray-200 dark:bg-gray-800"></div>
+                    <a
+                      href={`https://ipfs.io/ipfs/${networkStatus.ipfsHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      title="View on IPFS"
+                    >
+                      <Database className="w-4 h-4" />
+                      <span>IPFS</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </>
+                )}
               </div>
             </div>
 
@@ -71,9 +88,9 @@ export default function Header({ networkStatus, onCacheSite, onRefresh, darkMode
               <button
                 onClick={onCacheSite}
                 className="btn-secondary text-sm"
-                title="Cache site"
+                title="Cache site to IPFS"
               >
-                Cache
+                Upload to IPFS
               </button>
               <button
                 onClick={onRefresh}

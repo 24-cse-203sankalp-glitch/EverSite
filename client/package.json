@@ -12,6 +12,7 @@
   "dependencies": {
     "crypto-js": "^4.2.0",
     "framer-motion": "^11.0.3",
+    "ipfs-http-client": "^60.0.1",
     "localforage": "^1.10.0",
     "lucide-react": "^0.344.0",
     "peerjs": "^1.5.5",

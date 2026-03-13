@@ -13,13 +13,15 @@ import LegalPage from './pages/LegalPage';
 import VideosPage from './pages/VideosPage';
 import EverSiteCore from './core/EverSiteCore';
 import P2PLoader from './core/P2PLoader';
+import IPFSManager from './core/IPFSManager';
 
 function App() {
   const [networkStatus, setNetworkStatus] = useState({
     isOnline: false,
     peerCount: 0,
     connectedPeers: 0,
-    peerId: null
+    peerId: null,
+    ipfsHash: null
   });
   const [notifications, setNotifications] = useState([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -30,6 +32,7 @@ function App() {
     initEverSite();
     registerServiceWorker();
     setupP2PListener();
+    initIPFS();
     
     const savedTheme = localStorage.getItem('darkMode');
     if (savedTheme) {
@@ -126,8 +129,21 @@ function App() {
     }
   };
 
+  const initIPFS = async () => {
+    await IPFSManager.init();
+    const hash = IPFSManager.getSiteHash();
+    if (hash) {
+      setNetworkStatus(prev => ({ ...prev, ipfsHash: hash }));
+    }
+  };
+
   const handleCacheSite = async () => {
     await EverSiteCore.cacheCurrentSite();
+    
+    const result = await IPFSManager.uploadSite();
+    if (result.success) {
+      setNetworkStatus(prev => ({ ...prev, ipfsHash: result.hash }));
+    }
   };
 
   const handleRefresh = () => {

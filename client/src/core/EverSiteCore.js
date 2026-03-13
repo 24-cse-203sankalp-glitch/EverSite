@@ -27,7 +27,7 @@ class EverSiteCore {
     });
   }
 
-  async init(signalingServer = 'http://localhost:3001') {
+  async init(signalingServer = window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin) {
     try {
       // Connect to signaling server
       this.socket = io(signalingServer);

@@ -27,7 +27,7 @@ class EverSiteCore {
     });
   }
 
-  async init(signalingServer = window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin) {
+  async init(signalingServer = window.location.origin.includes('localhost') ? 'http://localhost:3001' : 'https://ever-site-server.vercel.app') {
     try {
       // Connect to signaling server
       this.socket = io(signalingServer);

@@ -2,7 +2,7 @@ import { Shield, Wifi, WifiOff, Users, Database, Moon, Sun } from 'lucide-react'
 
 export default function Header({ networkStatus, onCacheSite, onRefresh, darkMode, onToggleDarkMode, onNavigateHome }) {
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors">
+    <header className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <button onClick={onNavigateHome} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -16,7 +16,7 @@ export default function Header({ networkStatus, onCacheSite, onRefresh, darkMode
           </button>
 
           <div className="flex items-center gap-4">
-            <div className="card dark:bg-gray-700 dark:border-gray-600 px-4 py-2.5">
+            <div className="card dark:bg-gray-900 dark:border-gray-800 px-4 py-2.5">
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   {networkStatus.isOnline ? (
@@ -34,7 +34,7 @@ export default function Header({ networkStatus, onCacheSite, onRefresh, darkMode
                   </div>
                 </div>
 
-                <div className="w-px h-8 bg-gray-200 dark:bg-gray-600"></div>
+                <div className="w-px h-8 bg-gray-200 dark:bg-gray-800"></div>
 
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -46,7 +46,7 @@ export default function Header({ networkStatus, onCacheSite, onRefresh, darkMode
                   </div>
                 </div>
 
-                <div className="w-px h-8 bg-gray-200 dark:bg-gray-600"></div>
+                <div className="w-px h-8 bg-gray-200 dark:bg-gray-800"></div>
 
                 <div className="flex items-center gap-2">
                   <Database className="w-4 h-4 text-purple-600 dark:text-purple-400" />

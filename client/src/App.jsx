@@ -41,8 +41,10 @@ function App() {
     localStorage.setItem('darkMode', darkMode);
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      document.body.style.backgroundColor = '#000000';
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.style.backgroundColor = '';
     }
   }, [darkMode]);
 
@@ -157,7 +159,7 @@ function App() {
 
   return (
     <div className={darkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors">
         <ToastNotification notifications={notifications} onDismiss={dismissNotification} darkMode={darkMode} />
         <P2PChat 
           isOpen={isChatOpen} 
@@ -183,7 +185,7 @@ function App() {
             darkMode={darkMode}
           />
 
-          <main className="flex-1 p-8">
+          <main className="flex-1 p-8 dark:bg-black">
             {renderContent()}
           </main>
         </div>

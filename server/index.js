@@ -58,6 +58,13 @@ io.on('connection', (socket) => {
     console.log(`📊 Active peers: ${peers.size}`);
   });
 
+  // Chat message relay
+  socket.on('chat-message', (data) => {
+    // Broadcast to all other clients
+    socket.broadcast.emit('chat-message', data);
+    console.log(`💬 Chat message from ${data.username}: ${data.message}`);
+  });
+
   // Store site data from peers
   socket.on('store-site-data', (data) => {
     siteData.set(data.chunkId, {

@@ -17,6 +17,33 @@ export default function P2PChat({ isOpen, onClose, connectedPeers, darkMode }) {
   const audioRef = useRef(new Audio('/notification.mp3'));
 
   useEffect(() => {
+    // Listen for chat messages via socket.io
+    if (EverSiteCore.socket) {
+      const handleChatMessage = (data) => {
+        if (data.username !== username) {
+          setMessages(prev => [...prev, {
+            id: Date.now(),
+            username: data.username,
+            message: data.message,
+            timestamp: data.timestamp,
+            isOwn: false,
+            read: false
+          }]);
+          playNotificationSound();
+        }
+      };
+
+      EverSiteCore.socket.on('chat-message', handleChatMessage);
+
+      return () => {
+        if (EverSiteCore.socket) {
+          EverSiteCore.socket.off('chat-message', handleChatMessage);
+        }
+      };
+    }
+  }, [username]);
+
+  useEffect(() {
     EverSiteCore.on('peer-data', handleIncomingMessage);
     
     const savedUsername = localStorage.getItem('eversite-username');
@@ -133,7 +160,28 @@ export default function P2PChat({ isOpen, onClose, connectedPeers, darkMode }) {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (inputMessage.trim()) {
-      sendMessage(inputMessage);
+      const messageId = Date.now();
+      const messageData = {
+        username: username,
+        message: inputMessage,
+        timestamp: new Date().toISOString()
+      };
+
+      // Add to local messages
+      setMessages(prev => [...prev, {
+        id: messageId,
+        username: username,
+        message: inputMessage,
+        timestamp: messageData.timestamp,
+        isOwn: true,
+        read: false
+      }]);
+
+      // Broadcast via socket.io directly
+      if (EverSiteCore.socket && EverSiteCore.socket.connected) {
+        EverSiteCore.socket.emit('chat-message', messageData);
+      }
+
       setInputMessage('');
     }
   };
@@ -235,10 +283,10 @@ export default function P2PChat({ isOpen, onClose, connectedPeers, darkMode }) {
               <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>P2P Secure Chat</h3>
               <div className={`flex items-center gap-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <Users className="w-4 h-4" />
-                <span>{connectedPeers} peer{connectedPeers !== 1 ? 's' : ''} online</span>
+                <span>{EverSiteCore.peerCount || 0} online</span>
                 <span className="text-gray-400">•</span>
                 <Shield className="w-4 h-4 text-green-600" />
-                <span className="text-green-600">Encrypted</span>
+                <span className="text-green-600">Live</span>
               </div>
             </div>
           </div>
@@ -306,11 +354,11 @@ export default function P2PChat({ isOpen, onClose, connectedPeers, darkMode }) {
         ) : (
           <>
             <div className={`flex-1 overflow-y-auto p-4 space-y-3 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-              {connectedPeers === 0 && (
+              {messages.length === 0 && (
                 <div className={`text-center py-12 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                   <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">No peers connected</p>
-                  <p className="text-sm mt-2">Open more tabs to start chatting</p>
+                  <p className="font-medium">No messages yet</p>
+                  <p className="text-sm mt-2">Start chatting!</p>
                 </div>
               )}
 

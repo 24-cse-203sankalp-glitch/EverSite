@@ -58,31 +58,33 @@ export default function VideosPage({ darkMode }) {
 
   const handleDownloadVideo = async (video) => {
     try {
-      const response = await fetch(`https://www.youtube.com/watch?v=${video.id}`);
-      const html = await response.text();
+      setIsSearching(true);
       
-      const videoData = {
-        ...video,
-        downloadedAt: new Date().toISOString(),
-        youtubeUrl: `https://www.youtube.com/watch?v=${video.id}`,
-        embedUrl: `https://www.youtube.com/embed/${video.id}`,
-        cached: true
-      };
+      const response = await fetch('http://localhost:3001/api/download-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId: video.id })
+      });
       
-      await videoStore.setItem(video.id, videoData);
-      setDownloadedVideos(prev => [...prev, videoData]);
+      const result = await response.json();
+      
+      if (result.success) {
+        const videoData = {
+          ...video,
+          downloadedAt: new Date().toISOString(),
+          localUrl: `http://localhost:3001/api/video/${video.id}`,
+          cached: true,
+          offline: true
+        };
+        
+        await videoStore.setItem(video.id, videoData);
+        setDownloadedVideos(prev => [...prev, videoData]);
+      }
+      
+      setIsSearching(false);
     } catch (error) {
       console.error('Download failed:', error);
-      const videoData = {
-        ...video,
-        downloadedAt: new Date().toISOString(),
-        youtubeUrl: `https://www.youtube.com/watch?v=${video.id}`,
-        embedUrl: `https://www.youtube.com/embed/${video.id}`,
-        cached: true
-      };
-      
-      await videoStore.setItem(video.id, videoData);
-      setDownloadedVideos(prev => [...prev, videoData]);
+      setIsSearching(false);
     }
   };
 
@@ -103,11 +105,11 @@ export default function VideosPage({ darkMode }) {
           Video Library
         </h1>
         <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
-          Search and save video metadata for quick access
+          Download and watch videos offline
         </p>
-        <div className={`mt-3 p-3 rounded-lg ${darkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'}`}>
-          <p className={`text-sm ${darkMode ? 'text-yellow-400' : 'text-yellow-800'}`}>
-            <strong>Note:</strong> Downloaded videos save metadata only. Internet connection required to play videos.
+        <div className={`mt-3 p-3 rounded-lg ${darkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+          <p className={`text-sm ${darkMode ? 'text-blue-400' : 'text-blue-800'}`}>
+            <strong>Note:</strong> Videos are downloaded to local server and playable offline. Start video server with: <code className="bg-black/20 px-2 py-1 rounded">cd video-server && npm start</code>
           </p>
         </div>
       </div>
@@ -194,11 +196,11 @@ export default function VideosPage({ darkMode }) {
                   </p>
                   <button
                     onClick={() => handleDownloadVideo(video)}
-                    disabled={downloadedVideos.some(v => v.id === video.id)}
+                    disabled={downloadedVideos.some(v => v.id === video.id) || isSearching}
                     className="btn-primary w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    {downloadedVideos.some(v => v.id === video.id) ? 'Already Saved' : 'Save for Quick Access'}
+                    {downloadedVideos.some(v => v.id === video.id) ? 'Downloaded' : isSearching ? 'Downloading...' : 'Download for Offline'}
                   </button>
                 </div>
               </motion.div>
@@ -233,8 +235,8 @@ export default function VideosPage({ darkMode }) {
                   >
                     <Play className="w-16 h-16 text-white group-hover:scale-110 transition-transform" />
                   </button>
-                  <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                    Saved
+                  <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+                    Offline Ready
                   </div>
                 </div>
                 <div className="p-4">
@@ -300,7 +302,14 @@ export default function VideosPage({ darkMode }) {
             </div>
             <div className="p-4">
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                {navigator.onLine ? (
+                {selectedVideo.offline && selectedVideo.localUrl ? (
+                  <video
+                    src={selectedVideo.localUrl}
+                    controls
+                    autoPlay
+                    className="w-full h-full"
+                  />
+                ) : navigator.onLine ? (
                   <iframe
                     src={selectedVideo.embedUrl || `https://www.youtube.com/embed/${selectedVideo.id}`}
                     title={selectedVideo.title}
@@ -313,15 +322,7 @@ export default function VideosPage({ darkMode }) {
                     <div className="text-center">
                       <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
                       <p className="text-lg font-semibold mb-2">Offline Mode</p>
-                      <p className="text-sm text-gray-400">Video metadata saved. Connect to internet to play.</p>
-                      <a
-                        href={selectedVideo.youtubeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-4 px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        Open in YouTube
-                      </a>
+                      <p className="text-sm text-gray-400">Video not downloaded. Connect to internet to play.</p>
                     </div>
                   </div>
                 )}

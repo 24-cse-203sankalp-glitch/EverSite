@@ -60,7 +60,7 @@ export default function VideosPage({ darkMode }) {
     try {
       setIsSearching(true);
       
-      const response = await fetch('http://localhost:3001/api/download-video', {
+      const response = await fetch('http://localhost:3002/api/download-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoId: video.id })
@@ -72,7 +72,7 @@ export default function VideosPage({ darkMode }) {
         const videoData = {
           ...video,
           downloadedAt: new Date().toISOString(),
-          localUrl: `http://localhost:3001/api/video/${video.id}`,
+          localUrl: `http://localhost:3002/api/video/${video.id}`,
           cached: true,
           offline: true
         };

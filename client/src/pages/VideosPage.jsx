@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Play, Download, X, Video, Trash2, Share2, Youtube } from 'lucide-react';
 import localforage from 'localforage';
+import VIDEO_SERVER_URL from '../config/videoServer';
 
 const videoStore = localforage.createInstance({ name: 'eversite-videos' });
 
@@ -60,7 +61,7 @@ export default function VideosPage({ darkMode }) {
     try {
       setIsSearching(true);
       
-      const response = await fetch('http://localhost:3002/api/download-video', {
+      const response = await fetch(`${VIDEO_SERVER_URL}/api/download-video`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoId: video.id })
@@ -72,7 +73,7 @@ export default function VideosPage({ darkMode }) {
         const videoData = {
           ...video,
           downloadedAt: new Date().toISOString(),
-          localUrl: `http://localhost:3002/api/video/${video.id}`,
+          localUrl: `${VIDEO_SERVER_URL}/api/video/${video.id}`,
           cached: true,
           offline: true
         };

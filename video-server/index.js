@@ -79,6 +79,6 @@ app.get('/api/video/:videoId', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3002;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Video download server running on port ${PORT}`);
 });

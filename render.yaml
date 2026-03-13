@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: eversite-video-server
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    rootDir: video-server
+    envVars:
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: video-storage
+      mountPath: /app/cached-videos
+      sizeGB: 1

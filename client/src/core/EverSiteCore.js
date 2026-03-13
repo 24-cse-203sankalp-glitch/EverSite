@@ -27,7 +27,7 @@ class EverSiteCore {
     });
   }
 
-  async init(signalingServer = 'https://ever-site-server-fhjjec4a8-guptashivaani233-4615s-projects.vercel.app') {
+  async init(signalingServer = 'https://ever-site-server-nky8bfz1j-guptashivaani233-4615s-projects.vercel.app') {
     try {
       // Connect to signaling server
       this.socket = io(signalingServer);

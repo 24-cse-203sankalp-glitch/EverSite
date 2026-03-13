@@ -23,7 +23,7 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
   useEffect(() => {
     if (isUsernameSet) {
       console.log('Connecting to server...');
-      const newSocket = io('https://ever-site-server-fhjjec4a8-guptashivaani233-4615s-projects.vercel.app', {
+      const newSocket = io('https://ever-site-server-nky8bfz1j-guptashivaani233-4615s-projects.vercel.app', {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,

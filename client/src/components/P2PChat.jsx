@@ -22,15 +22,25 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
 
   useEffect(() => {
     if (isUsernameSet) {
-      const newSocket = io('https://ever-site-server.vercel.app');
+      console.log('Connecting to server...');
+      const newSocket = io('https://ever-site-server.vercel.app', {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
       
       newSocket.on('connect', () => {
-        console.log('Connected to server');
+        console.log('✅ Connected to server! Socket ID:', newSocket.id);
         newSocket.emit('join-chat', { username });
       });
 
+      newSocket.on('connect_error', (error) => {
+        console.error('❌ Connection error:', error);
+      });
+
       newSocket.on('chat-message', (data) => {
-        console.log('Received message:', data);
+        console.log('📨 Received message:', data);
         setMessages(prev => [...prev, {
           id: Date.now() + Math.random(),
           username: data.username,
@@ -41,12 +51,14 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
       });
 
       newSocket.on('user-count', (count) => {
+        console.log('👥 Online users:', count);
         setOnlineUsers(count);
       });
 
       setSocket(newSocket);
 
       return () => {
+        console.log('Disconnecting...');
         newSocket.disconnect();
       };
     }
@@ -66,16 +78,21 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (inputMessage.trim() && socket && socket.connected) {
-      const messageData = {
-        username: username,
-        message: inputMessage,
-        timestamp: new Date().toISOString()
-      };
+    if (inputMessage.trim()) {
+      if (socket && socket.connected) {
+        const messageData = {
+          username: username,
+          message: inputMessage,
+          timestamp: new Date().toISOString()
+        };
 
-      console.log('Sending message:', messageData);
-      socket.emit('chat-message', messageData);
-      setInputMessage('');
+        console.log('📤 Sending message:', messageData);
+        socket.emit('chat-message', messageData);
+        setInputMessage('');
+      } else {
+        console.error('❌ Socket not connected!');
+        alert('Not connected to server. Please refresh.');
+      }
     }
   };
 

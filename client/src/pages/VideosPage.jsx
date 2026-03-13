@@ -57,14 +57,33 @@ export default function VideosPage({ darkMode }) {
   };
 
   const handleDownloadVideo = async (video) => {
-    const videoData = {
-      ...video,
-      downloadedAt: new Date().toISOString(),
-      youtubeUrl: `https://www.youtube.com/watch?v=${video.id}`
-    };
-    
-    await videoStore.setItem(video.id, videoData);
-    setDownloadedVideos(prev => [...prev, videoData]);
+    try {
+      const response = await fetch(`https://www.youtube.com/watch?v=${video.id}`);
+      const html = await response.text();
+      
+      const videoData = {
+        ...video,
+        downloadedAt: new Date().toISOString(),
+        youtubeUrl: `https://www.youtube.com/watch?v=${video.id}`,
+        embedUrl: `https://www.youtube.com/embed/${video.id}`,
+        cached: true
+      };
+      
+      await videoStore.setItem(video.id, videoData);
+      setDownloadedVideos(prev => [...prev, videoData]);
+    } catch (error) {
+      console.error('Download failed:', error);
+      const videoData = {
+        ...video,
+        downloadedAt: new Date().toISOString(),
+        youtubeUrl: `https://www.youtube.com/watch?v=${video.id}`,
+        embedUrl: `https://www.youtube.com/embed/${video.id}`,
+        cached: true
+      };
+      
+      await videoStore.setItem(video.id, videoData);
+      setDownloadedVideos(prev => [...prev, videoData]);
+    }
   };
 
   const handleDeleteVideo = async (videoId) => {
@@ -84,8 +103,13 @@ export default function VideosPage({ darkMode }) {
           Video Library
         </h1>
         <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
-          Search and download videos for offline viewing
+          Search and save video metadata for quick access
         </p>
+        <div className={`mt-3 p-3 rounded-lg ${darkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'}`}>
+          <p className={`text-sm ${darkMode ? 'text-yellow-400' : 'text-yellow-800'}`}>
+            <strong>Note:</strong> Downloaded videos save metadata only. Internet connection required to play videos.
+          </p>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-6">
@@ -170,10 +194,11 @@ export default function VideosPage({ darkMode }) {
                   </p>
                   <button
                     onClick={() => handleDownloadVideo(video)}
-                    className="btn-primary w-full text-sm"
+                    disabled={downloadedVideos.some(v => v.id === video.id)}
+                    className="btn-primary w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Download for Offline
+                    {downloadedVideos.some(v => v.id === video.id) ? 'Already Saved' : 'Save for Quick Access'}
                   </button>
                 </div>
               </motion.div>
@@ -208,8 +233,8 @@ export default function VideosPage({ darkMode }) {
                   >
                     <Play className="w-16 h-16 text-white group-hover:scale-110 transition-transform" />
                   </button>
-                  <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
-                    Offline
+                  <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                    Saved
                   </div>
                 </div>
                 <div className="p-4">
@@ -275,13 +300,31 @@ export default function VideosPage({ darkMode }) {
             </div>
             <div className="p-4">
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                <iframe
-                  src={`https://www.youtube.com/embed/${selectedVideo.id}`}
-                  title={selectedVideo.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                />
+                {navigator.onLine ? (
+                  <iframe
+                    src={selectedVideo.embedUrl || `https://www.youtube.com/embed/${selectedVideo.id}`}
+                    title={selectedVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white">
+                    <div className="text-center">
+                      <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-semibold mb-2">Offline Mode</p>
+                      <p className="text-sm text-gray-400">Video metadata saved. Connect to internet to play.</p>
+                      <a
+                        href={selectedVideo.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-4 px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        Open in YouTube
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

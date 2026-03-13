@@ -24,23 +24,44 @@ app.get('/health', (req, res) => {
 app.post('/api/download-video', async (req, res) => {
   try {
     const { videoId } = req.body;
+    console.log('Download request for video:', videoId);
+    
+    if (!videoId) {
+      return res.status(400).json({ success: false, error: 'Video ID required' });
+    }
+
     const videoPath = path.join(VIDEOS_DIR, `${videoId}.mp4`);
 
     if (fs.existsSync(videoPath)) {
+      console.log('Video already cached:', videoId);
       return res.json({ success: true, message: 'Video already cached' });
     }
 
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const video = ytdl(videoUrl, { quality: 'lowest' });
+    console.log('Starting download from:', videoUrl);
+    
+    const info = await ytdl.getInfo(videoUrl);
+    const format = ytdl.chooseFormat(info.formats, { quality: 'lowest', filter: 'videoandaudio' });
+    
+    if (!format) {
+      return res.status(400).json({ success: false, error: 'No suitable format found' });
+    }
 
-    video.pipe(fs.createWriteStream(videoPath));
+    const video = ytdl.downloadFromInfo(info, { format });
+    const writeStream = fs.createWriteStream(videoPath);
+    
+    video.pipe(writeStream);
 
-    video.on('end', () => {
+    writeStream.on('finish', () => {
+      console.log('Video downloaded successfully:', videoId);
       res.json({ success: true, message: 'Video downloaded successfully' });
     });
 
     video.on('error', (error) => {
       console.error('Download error:', error);
+      if (fs.existsSync(videoPath)) {
+        fs.unlinkSync(videoPath);
+      }
       res.status(500).json({ success: false, error: error.message });
     });
 

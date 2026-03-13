@@ -8,14 +8,18 @@ class IPFSManager {
 
   async init() {
     try {
+      const auth = 'Basic ' + btoa('2VxJYKLZ8QqGvVXhZ9K9qQqGvVX:e33ef09bd9bb4448a7f15e95580e20aa');
+      
       this.client = create({
         host: 'ipfs.infura.io',
         port: 5001,
         protocol: 'https',
         headers: {
-          authorization: 'Basic ' + Buffer.from('2VxJYKLZ8QqGvVXhZ9K9qQqGvVX:e33ef09bd9bb4448a7f15e95580e20aa').toString('base64')
+          authorization: auth
         }
       });
+      
+      console.log('IPFS client initialized');
       return true;
     } catch (error) {
       console.error('IPFS init failed:', error);

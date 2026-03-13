@@ -4,6 +4,10 @@
   "private": true,
   "scripts": {
     "build": "cd client && npm run build",
-    "start": "cd server && node index.js"
+    "start": "concurrently \"cd server && node index.js\" \"cd video-server && node index.js\"",
+    "dev": "concurrently \"cd client && npm run dev\" \"cd server && node index.js\" \"cd video-server && node index.js\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

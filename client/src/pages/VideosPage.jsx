@@ -107,11 +107,6 @@ export default function VideosPage({ darkMode }) {
         <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
           Download and watch videos offline
         </p>
-        <div className={`mt-3 p-3 rounded-lg ${darkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
-          <p className={`text-sm ${darkMode ? 'text-blue-400' : 'text-blue-800'}`}>
-            <strong>Note:</strong> Videos are downloaded to local server and playable offline. Start video server with: <code className="bg-black/20 px-2 py-1 rounded">cd video-server && npm start</code>
-          </p>
-        </div>
       </div>
 
       <div className="flex gap-2 mb-6">

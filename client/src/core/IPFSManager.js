@@ -11,7 +11,10 @@ class IPFSManager {
       this.client = create({
         host: 'ipfs.infura.io',
         port: 5001,
-        protocol: 'https'
+        protocol: 'https',
+        headers: {
+          authorization: 'Basic ' + Buffer.from('2VxJYKLZ8QqGvVXhZ9K9qQqGvVX:e33ef09bd9bb4448a7f15e95580e20aa').toString('base64')
+        }
       });
       return true;
     } catch (error) {
@@ -24,15 +27,26 @@ class IPFSManager {
     if (!this.client) await this.init();
 
     try {
-      const mockHash = 'Qm' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('eversite-ipfs-hash', mockHash);
-      this.siteHash = mockHash;
+      const files = await this.collectSiteFiles();
+      const results = [];
+
+      for (const file of files) {
+        const result = await this.client.add(file.content);
+        results.push({
+          path: file.path,
+          hash: result.path
+        });
+      }
+
+      const rootHash = results[0].hash;
+      localStorage.setItem('eversite-ipfs-hash', rootHash);
+      this.siteHash = rootHash;
 
       return {
         success: true,
-        hash: mockHash,
-        url: `https://ipfs.io/ipfs/${mockHash}`,
-        files: []
+        hash: rootHash,
+        url: `https://ipfs.io/ipfs/${rootHash}`,
+        files: results
       };
     } catch (error) {
       console.error('IPFS upload failed:', error);

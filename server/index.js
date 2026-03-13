@@ -18,6 +18,14 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.json({ status: 'online', message: 'EverSite Server Running', peers: peers.size });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', peers: peers.size });
+});
+
 // Store active peers
 const peers = new Map();
 const siteData = new Map();

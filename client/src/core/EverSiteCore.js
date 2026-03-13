@@ -58,11 +58,16 @@ class EverSiteCore {
       this.isOnline = true;
       this.emit('status-change', { online: true });
       
-      // Register as peer
+      // Register as peer immediately
       this.socket.emit('register-peer', {
         hasFullSite: true,
         chunks: []
       });
+      
+      // Request peers immediately
+      setTimeout(() => {
+        this.socket.emit('get-peers');
+      }, 500);
     });
 
     this.socket.on('disconnect', () => {
@@ -74,6 +79,18 @@ class EverSiteCore {
     this.socket.on('peer-count', (count) => {
       this.peerCount = count;
       this.emit('peer-count', count);
+    });
+
+    this.socket.on('peer-list', (peerIds) => {
+      console.log(`📡 Peer list received: ${peerIds.length} peers`);
+      peerIds.forEach(peerId => {
+        this.connectToPeer(peerId);
+      });
+    });
+
+    this.socket.on('new-peer', (peerId) => {
+      console.log(`🆕 New peer joined: ${peerId}`);
+      this.connectToPeer(peerId);
     });
 
     this.socket.on('available-peers', (peers) => {

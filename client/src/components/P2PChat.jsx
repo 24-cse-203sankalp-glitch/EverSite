@@ -1,13 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Send, MessageCircle, X, Users, Shield } from 'lucide-react';
+import { Send, MessageCircle, X, Users, Shield, Copy } from 'lucide-react';
+import Peer from 'peerjs';
 
-export default function P2PChat({ isOpen, onClose, darkMode }) {
+export default function P2PChat({ isOpen, onClose, darkMode, connectedPeers }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [username, setUsername] = useState('');
   const [isUsernameSet, setIsUsernameSet] = useState(false);
+  const [myPeerId, setMyPeerId] = useState('');
+  const [targetPeerId, setTargetPeerId] = useState('');
+  const [connections, setConnections] = useState([]);
+  const [onlinePeers, setOnlinePeers] = useState(0);
   const messagesEndRef = useRef(null);
+  const peerRef = useRef(null);
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('eversite-username');
@@ -16,26 +22,71 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
       setIsUsernameSet(true);
     }
 
-    // Listen for messages from other tabs
-    const handleMessage = (e) => {
-      if (e.data.type === 'CHAT_MESSAGE') {
-        setMessages(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          username: e.data.username,
-          message: e.data.message,
-          timestamp: e.data.timestamp,
-          isOwn: false
-        }]);
+    if (isOpen && !peerRef.current) {
+      initPeer();
+    }
+
+    return () => {
+      if (peerRef.current) {
+        peerRef.current.destroy();
+        peerRef.current = null;
       }
     };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const initPeer = () => {
+    const peer = new Peer({
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+      }
+    });
+
+    peer.on('open', (id) => {
+      setMyPeerId(id);
+      setOnlinePeers(1);
+    });
+
+    peer.on('connection', (conn) => {
+      setupConnection(conn);
+    });
+
+    peer.on('error', (err) => {
+      console.error('PeerJS error:', err);
+    });
+
+    peerRef.current = peer;
+  };
+
+  const setupConnection = (conn) => {
+    conn.on('open', () => {
+      setConnections(prev => [...prev, conn]);
+      setOnlinePeers(prev => prev + 1);
+    });
+
+    conn.on('data', (data) => {
+      if (data.type === 'CHAT_MESSAGE') {
+        setMessages(prev => [...prev, {
+          id: Date.now() + Math.random(),
+          username: data.username,
+          message: data.message,
+          timestamp: data.timestamp,
+          isOwn: false
+        }]);
+      }
+    });
+
+    conn.on('close', () => {
+      setConnections(prev => prev.filter(c => c !== conn));
+      setOnlinePeers(prev => Math.max(1, prev - 1));
+    });
+  };
 
   const handleSetUsername = (e) => {
     e.preventDefault();
@@ -45,9 +96,17 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
     }
   };
 
+  const handleConnectToPeer = () => {
+    if (!targetPeerId.trim() || !peerRef.current) return;
+
+    const conn = peerRef.current.connect(targetPeerId);
+    setupConnection(conn);
+    setTargetPeerId('');
+  };
+
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (inputMessage.trim()) {
+    if (inputMessage.trim() && connections.length > 0) {
       const messageData = {
         type: 'CHAT_MESSAGE',
         username: username,
@@ -55,7 +114,6 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
         timestamp: new Date().toISOString()
       };
 
-      // Add to own messages
       setMessages(prev => [...prev, {
         id: Date.now(),
         username: username,
@@ -64,38 +122,19 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
         isOwn: true
       }]);
 
-      // Broadcast to other tabs
-      window.postMessage(messageData, '*');
-      
-      // Also try localStorage for cross-tab
-      const chatKey = 'eversite-chat-' + Date.now();
-      localStorage.setItem(chatKey, JSON.stringify(messageData));
-      setTimeout(() => localStorage.removeItem(chatKey), 1000);
+      connections.forEach(conn => {
+        if (conn.open) {
+          conn.send(messageData);
+        }
+      });
 
       setInputMessage('');
     }
   };
 
-  // Listen to localStorage changes for cross-tab messaging
-  useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key && e.key.startsWith('eversite-chat-')) {
-        const data = JSON.parse(e.newValue);
-        if (data.username !== username) {
-          setMessages(prev => [...prev, {
-            id: Date.now() + Math.random(),
-            username: data.username,
-            message: data.message,
-            timestamp: data.timestamp,
-            isOwn: false
-          }]);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [username]);
+  const copyPeerId = () => {
+    navigator.clipboard.writeText(myPeerId);
+  };
 
   if (!isOpen) return null;
 
@@ -123,10 +162,10 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
               <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>P2P Chat</h3>
               <div className={`flex items-center gap-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <Users className="w-4 h-4" />
-                <span>Multi-tab messaging</span>
+                <span>{onlinePeers} Online</span>
                 <span className="text-gray-400">•</span>
                 <Shield className="w-4 h-4 text-green-600" />
-                <span className="text-green-600">Active</span>
+                <span className="text-green-600">{connections.length} Connected</span>
               </div>
             </div>
           </div>
@@ -143,7 +182,7 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
             <form onSubmit={handleSetUsername} className="w-full max-w-md space-y-4">
               <div className="text-center mb-6">
                 <h4 className={`text-2xl font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Choose Your Username</h4>
-                <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Start chatting across tabs</p>
+                <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Start P2P chatting</p>
               </div>
               <input
                 type="text"
@@ -169,12 +208,61 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
           </div>
         ) : (
           <>
+            <div className={`p-4 border-b ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+              <div className="space-y-3">
+                <div>
+                  <label className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1 block`}>Your Peer ID (share this)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={myPeerId}
+                      readOnly
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      } border`}
+                    />
+                    <button
+                      onClick={copyPeerId}
+                      className="btn-secondary px-3"
+                      title="Copy Peer ID"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1 block`}>Connect to Peer</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={targetPeerId}
+                      onChange={(e) => setTargetPeerId(e.target.value)}
+                      placeholder="Paste peer ID..."
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                      } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    />
+                    <button
+                      onClick={handleConnectToPeer}
+                      className="btn-primary px-4 text-sm"
+                      disabled={!targetPeerId.trim()}
+                    >
+                      Connect
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className={`flex-1 overflow-y-auto p-4 space-y-3 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
               {messages.length === 0 && (
                 <div className={`text-center py-12 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                   <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p className="font-medium">No messages yet</p>
-                  <p className="text-sm mt-2">Open another tab and start chatting!</p>
+                  <p className="text-sm mt-2">{connections.length > 0 ? 'Start chatting!' : 'Connect to a peer to start chatting'}</p>
                 </div>
               )}
 
@@ -212,17 +300,17 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
                   type="text"
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder={connections.length > 0 ? "Type a message..." : "Connect to a peer first..."}
                   className={`flex-1 px-4 py-2.5 rounded-lg ${
                     darkMode 
                       ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                   } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  autoFocus
+                  disabled={connections.length === 0}
                 />
                 <button
                   type="submit"
-                  disabled={!inputMessage.trim()}
+                  disabled={!inputMessage.trim() || connections.length === 0}
                   className="btn-primary px-6 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-5 h-5" />

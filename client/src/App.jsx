@@ -71,13 +71,7 @@ function App() {
   };
 
   const addNotification = (type, title, message) => {
-    const id = Date.now();
-    setNotifications(prev => [...prev, { id, type, title, message }]);
-    setTimeout(() => dismissNotification(id), 5000);
-    
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, { body: message });
-    }
+    // Notifications disabled
   };
 
   const dismissNotification = (id) => {
@@ -110,9 +104,7 @@ function App() {
         setNetworkStatus(prev => ({ ...prev, peerId: id }));
       });
 
-      EverSiteCore.on('chunk-received', (data) => {
-        // Silent
-      });
+      EverSiteCore.on('chunk-received', () => {});
     }
     
     if ('Notification' in window && Notification.permission === 'default') {
@@ -133,7 +125,6 @@ function App() {
 
   const handleCacheSite = async () => {
     await EverSiteCore.cacheCurrentSite();
-    addNotification('upload', 'Site Cached', 'Shared with all peers');
   };
 
   const handleRefresh = () => {

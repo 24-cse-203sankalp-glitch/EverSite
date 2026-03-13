@@ -60,6 +60,7 @@ export default function VideosPage({ darkMode }) {
   const handleDownloadVideo = async (video) => {
     try {
       setIsSearching(true);
+      console.log('Downloading video:', video.id, 'from', VIDEO_SERVER_URL);
       
       const response = await fetch(`${VIDEO_SERVER_URL}/api/download-video`, {
         method: 'POST',
@@ -67,7 +68,12 @@ export default function VideosPage({ darkMode }) {
         body: JSON.stringify({ videoId: video.id })
       });
       
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      
       const result = await response.json();
+      console.log('Download result:', result);
       
       if (result.success) {
         const videoData = {
@@ -80,11 +86,15 @@ export default function VideosPage({ darkMode }) {
         
         await videoStore.setItem(video.id, videoData);
         setDownloadedVideos(prev => [...prev, videoData]);
+        alert('Video downloaded successfully!');
+      } else {
+        alert('Download failed: ' + result.message);
       }
       
       setIsSearching(false);
     } catch (error) {
       console.error('Download failed:', error);
+      alert('Download failed: ' + error.message);
       setIsSearching(false);
     }
   };

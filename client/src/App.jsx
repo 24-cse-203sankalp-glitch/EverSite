@@ -139,11 +139,18 @@ function App() {
   };
 
   const handleCacheSite = async () => {
+    console.log('Starting cache and IPFS upload...');
     await EverSiteCore.cacheCurrentSite();
     
     const result = await IPFSManager.uploadSite();
+    console.log('IPFS upload result:', result);
+    
     if (result.success) {
       setNetworkStatus(prev => ({ ...prev, ipfsHash: result.hash }));
+      setActiveSection('ipfs');
+    } else {
+      console.error('IPFS upload failed:', result.error);
+      alert('IPFS upload failed: ' + result.error);
     }
   };
 

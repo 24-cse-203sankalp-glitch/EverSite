@@ -43,7 +43,7 @@ export default function P2PChat({ isOpen, onClose, connectedPeers, darkMode }) {
     }
   }, [username]);
 
-  useEffect(() {
+  useEffect(() => {
     EverSiteCore.on('peer-data', handleIncomingMessage);
     
     const savedUsername = localStorage.getItem('eversite-username');

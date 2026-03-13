@@ -1,15 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Send, MessageCircle, X, Users, Shield } from 'lucide-react';
-import io from 'socket.io-client';
 
 export default function P2PChat({ isOpen, onClose, darkMode }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [username, setUsername] = useState('');
   const [isUsernameSet, setIsUsernameSet] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState(0);
-  const [socket, setSocket] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -18,51 +15,23 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
       setUsername(savedUsername);
       setIsUsernameSet(true);
     }
-  }, []);
 
-  useEffect(() => {
-    if (isUsernameSet) {
-      console.log('Connecting to server...');
-      const newSocket = io('https://ever-site-server-nky8bfz1j-guptashivaani233-4615s-projects.vercel.app', {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
-      });
-      
-      newSocket.on('connect', () => {
-        console.log('✅ Connected to server! Socket ID:', newSocket.id);
-        newSocket.emit('join-chat', { username });
-      });
-
-      newSocket.on('connect_error', (error) => {
-        console.error('❌ Connection error:', error);
-      });
-
-      newSocket.on('chat-message', (data) => {
-        console.log('📨 Received message:', data);
+    // Listen for messages from other tabs
+    const handleMessage = (e) => {
+      if (e.data.type === 'CHAT_MESSAGE') {
         setMessages(prev => [...prev, {
           id: Date.now() + Math.random(),
-          username: data.username,
-          message: data.message,
-          timestamp: data.timestamp,
-          isOwn: data.username === username
+          username: e.data.username,
+          message: e.data.message,
+          timestamp: e.data.timestamp,
+          isOwn: false
         }]);
-      });
+      }
+    };
 
-      newSocket.on('user-count', (count) => {
-        console.log('👥 Online users:', count);
-        setOnlineUsers(count);
-      });
-
-      setSocket(newSocket);
-
-      return () => {
-        console.log('Disconnecting...');
-        newSocket.disconnect();
-      };
-    }
-  }, [isUsernameSet, username]);
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -79,22 +48,54 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (inputMessage.trim()) {
-      if (socket && socket.connected) {
-        const messageData = {
-          username: username,
-          message: inputMessage,
-          timestamp: new Date().toISOString()
-        };
+      const messageData = {
+        type: 'CHAT_MESSAGE',
+        username: username,
+        message: inputMessage,
+        timestamp: new Date().toISOString()
+      };
 
-        console.log('📤 Sending message:', messageData);
-        socket.emit('chat-message', messageData);
-        setInputMessage('');
-      } else {
-        console.error('❌ Socket not connected!');
-        alert('Not connected to server. Please refresh.');
-      }
+      // Add to own messages
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        username: username,
+        message: inputMessage,
+        timestamp: messageData.timestamp,
+        isOwn: true
+      }]);
+
+      // Broadcast to other tabs
+      window.postMessage(messageData, '*');
+      
+      // Also try localStorage for cross-tab
+      const chatKey = 'eversite-chat-' + Date.now();
+      localStorage.setItem(chatKey, JSON.stringify(messageData));
+      setTimeout(() => localStorage.removeItem(chatKey), 1000);
+
+      setInputMessage('');
     }
   };
+
+  // Listen to localStorage changes for cross-tab messaging
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key && e.key.startsWith('eversite-chat-')) {
+        const data = JSON.parse(e.newValue);
+        if (data.username !== username) {
+          setMessages(prev => [...prev, {
+            id: Date.now() + Math.random(),
+            username: data.username,
+            message: data.message,
+            timestamp: data.timestamp,
+            isOwn: false
+          }]);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [username]);
 
   if (!isOpen) return null;
 
@@ -119,13 +120,13 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
               <MessageCircle className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Live Chat</h3>
+              <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>P2P Chat</h3>
               <div className={`flex items-center gap-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <Users className="w-4 h-4" />
-                <span>{onlineUsers} online</span>
+                <span>Multi-tab messaging</span>
                 <span className="text-gray-400">•</span>
                 <Shield className="w-4 h-4 text-green-600" />
-                <span className="text-green-600">Live</span>
+                <span className="text-green-600">Active</span>
               </div>
             </div>
           </div>
@@ -142,7 +143,7 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
             <form onSubmit={handleSetUsername} className="w-full max-w-md space-y-4">
               <div className="text-center mb-6">
                 <h4 className={`text-2xl font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Choose Your Username</h4>
-                <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Join the conversation</p>
+                <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Start chatting across tabs</p>
               </div>
               <input
                 type="text"
@@ -173,7 +174,7 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
                 <div className={`text-center py-12 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                   <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p className="font-medium">No messages yet</p>
-                  <p className="text-sm mt-2">Start chatting!</p>
+                  <p className="text-sm mt-2">Open another tab and start chatting!</p>
                 </div>
               )}
 
@@ -217,6 +218,7 @@ export default function P2PChat({ isOpen, onClose, darkMode }) {
                       ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                   } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  autoFocus
                 />
                 <button
                   type="submit"

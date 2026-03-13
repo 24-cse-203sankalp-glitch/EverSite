@@ -10,6 +10,7 @@ import TechnicalPage from './pages/TechnicalPage';
 import EmergencyPage from './pages/EmergencyPage';
 import ResourcesPage from './pages/ResourcesPage';
 import LegalPage from './pages/LegalPage';
+import VideosPage from './pages/VideosPage';
 import EverSiteCore from './core/EverSiteCore';
 import P2PLoader from './core/P2PLoader';
 
@@ -147,6 +148,8 @@ function App() {
         return <ResourcesPage darkMode={darkMode} />;
       case 'legal':
         return <LegalPage darkMode={darkMode} />;
+      case 'videos':
+        return <VideosPage darkMode={darkMode} />;
       default:
         return <HomePage darkMode={darkMode} onNavigate={setActiveSection} />;
     }

@@ -1,12 +1,13 @@
-import { BookOpen, Heart, Wrench, MessageSquare, Shield, Globe, FileText, AlertTriangle } from 'lucide-react';
+import { BookOpen, Heart, Wrench, MessageSquare, Shield, Globe, FileText, AlertTriangle, Video } from 'lucide-react';
 
 const navigationItems = [
   { id: 'wiki', label: 'Wiki', icon: BookOpen, color: 'blue' },
   { id: 'medical', label: 'Medical', icon: Heart, color: 'red' },
   { id: 'technical', label: 'Technical', icon: Wrench, color: 'purple' },
   { id: 'emergency', label: 'Emergency', icon: AlertTriangle, color: 'orange' },
-  { id: 'legal', label: 'Legal', icon: FileText, color: 'gray' },
+  { id: 'videos', label: 'Videos', icon: Video, color: 'indigo' },
   { id: 'resources', label: 'Resources', icon: Globe, color: 'green' },
+  { id: 'legal', label: 'Legal', icon: FileText, color: 'gray' },
 ];
 
 export default function Sidebar({ activeSection, onSectionChange, onOpenChat, darkMode }) {

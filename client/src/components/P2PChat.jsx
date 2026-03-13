@@ -132,7 +132,7 @@ export default function P2PChat({ isOpen, onClose, connectedPeers, darkMode }) {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (inputMessage.trim() && connectedPeers > 0) {
+    if (inputMessage.trim()) {
       sendMessage(inputMessage);
       setInputMessage('');
     }
@@ -379,8 +379,7 @@ export default function P2PChat({ isOpen, onClose, connectedPeers, darkMode }) {
                     setInputMessage(e.target.value);
                     handleTyping();
                   }}
-                  placeholder={connectedPeers === 0 ? 'No peers connected...' : 'Type a message...'}
-                  disabled={connectedPeers === 0}
+                  placeholder="Type a message..."
                   className={`flex-1 px-4 py-2.5 rounded-lg ${
                     darkMode 
                       ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 disabled:bg-gray-800' 
@@ -398,7 +397,7 @@ export default function P2PChat({ isOpen, onClose, connectedPeers, darkMode }) {
                 </label>
                 <button
                   type="submit"
-                  disabled={!inputMessage.trim() || connectedPeers === 0}
+                  disabled={!inputMessage.trim()}
                   className="btn-primary px-6 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-5 h-5" />

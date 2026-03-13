@@ -1,4 +1,4 @@
-import { BookOpen, Heart, Wrench, MessageSquare, Shield, Globe, FileText, AlertTriangle, Video } from 'lucide-react';
+import { BookOpen, Heart, Wrench, MessageSquare, Shield, Globe, FileText, AlertTriangle, Video, Database } from 'lucide-react';
 
 const navigationItems = [
   { id: 'wiki', label: 'Wiki', icon: BookOpen, color: 'blue' },
@@ -39,6 +39,25 @@ export default function Sidebar({ activeSection, onSectionChange, onOpenChat, da
               </button>
             );
           })}
+        </div>
+
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2">
+            Decentralized
+          </h2>
+          <button
+            onClick={() => onSectionChange('ipfs')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeSection === 'ipfs'
+                ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900'
+            }`}
+          >
+            <Database className={`w-5 h-5 ${
+              activeSection === 'ipfs' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+            }`} />
+            IPFS Access
+          </button>
         </div>
 
         <div className="pt-4 border-t border-gray-200 dark:border-gray-800">

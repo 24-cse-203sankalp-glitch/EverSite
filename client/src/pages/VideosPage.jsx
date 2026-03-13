@@ -32,7 +32,7 @@ export default function VideosPage({ darkMode }) {
     
     setIsSearching(true);
     try {
-      const API_KEY = 'AIzaSyDummy_Replace_With_Real_Key';
+      const API_KEY = 'AIzaSyCgBK_NfiP8MCqR2XcYryh6Y5WD7uKoa0o';
       const response = await fetch(
         `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(searchQuery)}&type=video&key=${API_KEY}`
       );

@@ -11,6 +11,7 @@ import EmergencyPage from './pages/EmergencyPage';
 import ResourcesPage from './pages/ResourcesPage';
 import LegalPage from './pages/LegalPage';
 import VideosPage from './pages/VideosPage';
+import IPFSPage from './pages/IPFSPage';
 import EverSiteCore from './core/EverSiteCore';
 import P2PLoader from './core/P2PLoader';
 import IPFSManager from './core/IPFSManager';
@@ -168,6 +169,8 @@ function App() {
         return <LegalPage darkMode={darkMode} />;
       case 'videos':
         return <VideosPage darkMode={darkMode} />;
+      case 'ipfs':
+        return <IPFSPage darkMode={darkMode} />;
       default:
         return <HomePage darkMode={darkMode} onNavigate={setActiveSection} />;
     }

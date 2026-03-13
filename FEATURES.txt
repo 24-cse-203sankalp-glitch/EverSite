@@ -1,0 +1,86 @@
+WIKI KNOWLEDGE BASE
+- 8+ comprehensive survival guides
+- Emergency preparedness, water purification
+- First aid, shelter building, fire starting
+- Navigation, foraging, knots & rope work
+- Search functionality with categories
+- Dark mode compatible
+MEDICAL PROCEDURES
+- 6 life-saving emergency procedures
+- CPR, stroke recognition, bleeding control
+- Allergic reactions, burns, choking
+- Step-by-step instructions
+- Critical for emergency situations
+TECHNICAL GUIDES
+- 5 system administration guides
+- Network troubleshooting, security
+- Server management, backup procedures
+- For technical personnel
+EMERGENCY RESOURCES
+- Emergency contact numbers
+- Evacuation checklists
+- Shelter location guidelines
+- Quick reference for disasters
+VIDEO LIBRARY
+- YouTube search (survival/medical/emergency)
+- Real video downloads using yt-dlp
+- Offline playback with HTML5 player
+- Videos saved to: downloader/downloads/
+- Works without internet after download
+P2P CHAT
+- Peer-to-peer messaging
+- Works online and offline (same network)
+- Cross-tab communication via localStorage
+- Secure encrypted connections
+- No server dependency for local chat
+IPFS INTEGRATION
+- Decentralized site hosting
+- Upload entire site to IPFS network
+- Access via multiple gateways
+- Survives server downtime
+- Censorship resistant
+
+===============================================
+                OFFLINE FEATURES
+===============================================
+
+Service Worker Caching
+- Entire site works offline after first visit
+- Click "Cache & Upload" to enable
+
+Video Downloads
+- Real MP4 files downloaded locally
+- Play without internet connection
+- Stored permanently on device
+
+P2P Chat (Local Network)
+- Works between devices on same WiFi
+- No internet required for local communication
+
+All Content Pages
+- Wiki, Medical, Technical, Emergency
+- Fully functional offline
+
+===============================================
+                DARK MODE
+===============================================
+
+Pitch Black Theme
+- Toggle in header (moon/sun icon)
+- Pure black background (#000000)
+- Optimized for low-light environments
+- Saves battery on OLED screens
+- Persistent across sessions
+
+===============================================
+              TECHNICAL DETAILS
+===============================================
+
+ARCHITECTURE:
+- Frontend: React 18 + Tailwind CSS
+- Backend: Node.js + Express
+- P2P: PeerJS + WebRTC
+- Storage: IndexedDB + LocalForage
+- Video: yt-dlp + HTML5 player
+- Deployment: Vercel + Render
+

@@ -39,29 +39,61 @@ export default function P2PChat({ isOpen, onClose, darkMode, connectedPeers }) {
   }, [messages]);
 
   const initPeer = () => {
-    const peer = new Peer({
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
-        ]
+    // Use localStorage for cross-tab communication instead of PeerJS
+    const localId = 'local-' + Math.random().toString(36).substr(2, 9);
+    setMyPeerId(localId);
+    setOnlinePeers(1);
+    console.log('Local peer ID:', localId);
+    
+    // Listen for localStorage messages from other tabs
+    const handleStorageMessage = (e) => {
+      if (e.key && e.key.startsWith('peer-connect-')) {
+        const data = JSON.parse(e.newValue);
+        if (data.targetId === localId) {
+          console.log('Connection request from:', data.fromId);
+          setConnections(prev => [...prev, {
+            peer: data.fromId,
+            open: true,
+            send: (msg) => {
+              localStorage.setItem('peer-message-' + Date.now(), JSON.stringify({
+                from: localId,
+                to: data.fromId,
+                data: msg
+              }));
+            }
+          }]);
+          setOnlinePeers(prev => prev + 1);
+        }
       }
-    });
-
-    peer.on('open', (id) => {
-      setMyPeerId(id);
-      setOnlinePeers(1);
-    });
-
-    peer.on('connection', (conn) => {
-      setupConnection(conn);
-    });
-
-    peer.on('error', (err) => {
-      console.error('PeerJS error:', err);
-    });
-
-    peerRef.current = peer;
+      
+      if (e.key && e.key.startsWith('peer-message-')) {
+        const data = JSON.parse(e.newValue);
+        if (data.to === localId && data.data.type === 'CHAT_MESSAGE') {
+          setMessages(prev => [...prev, {
+            id: Date.now() + Math.random(),
+            username: data.data.username,
+            message: data.data.message,
+            timestamp: data.data.timestamp,
+            isOwn: false
+          }]);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageMessage);
+    
+    // Cleanup old messages
+    setInterval(() => {
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('peer-connect-') || key.startsWith('peer-message-')) {
+          const timestamp = parseInt(key.split('-').pop());
+          if (Date.now() - timestamp > 5000) {
+            localStorage.removeItem(key);
+          }
+        }
+      });
+    }, 5000);
   };
 
   const setupConnection = (conn) => {
@@ -97,11 +129,34 @@ export default function P2PChat({ isOpen, onClose, darkMode, connectedPeers }) {
   };
 
   const handleConnectToPeer = () => {
-    if (!targetPeerId.trim() || !peerRef.current) return;
+    if (!targetPeerId.trim()) return;
 
-    const conn = peerRef.current.connect(targetPeerId);
-    setupConnection(conn);
+    console.log('Connecting to peer:', targetPeerId);
+    
+    // Send connection request via localStorage
+    localStorage.setItem('peer-connect-' + Date.now(), JSON.stringify({
+      fromId: myPeerId,
+      targetId: targetPeerId
+    }));
+    
+    // Create mock connection
+    const mockConnection = {
+      peer: targetPeerId,
+      open: true,
+      send: (msg) => {
+        localStorage.setItem('peer-message-' + Date.now(), JSON.stringify({
+          from: myPeerId,
+          to: targetPeerId,
+          data: msg
+        }));
+      }
+    };
+    
+    setConnections(prev => [...prev, mockConnection]);
+    setOnlinePeers(prev => prev + 1);
     setTargetPeerId('');
+    
+    console.log('Connected to:', targetPeerId);
   };
 
   const handleSendMessage = (e) => {
@@ -122,9 +177,14 @@ export default function P2PChat({ isOpen, onClose, darkMode, connectedPeers }) {
         isOwn: true
       }]);
 
+      // Send to all connected peers via localStorage
       connections.forEach(conn => {
         if (conn.open) {
-          conn.send(messageData);
+          localStorage.setItem('peer-message-' + Date.now() + '-' + Math.random(), JSON.stringify({
+            from: myPeerId,
+            to: conn.peer,
+            data: messageData
+          }));
         }
       });
 

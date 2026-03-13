@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "eversite-server",
   "builds": [
     {
       "src": "index.js",

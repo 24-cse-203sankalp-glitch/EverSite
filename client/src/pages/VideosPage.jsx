@@ -33,8 +33,9 @@ export default function VideosPage({ darkMode }) {
     setIsSearching(true);
     try {
       const API_KEY = 'AIzaSyCgBK_NfiP8MCqR2XcYryh6Y5WD7uKoa0o';
+      const survivalQuery = `${searchQuery} survival emergency medical educational tutorial`;
       const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(searchQuery)}&type=video&key=${API_KEY}`
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(survivalQuery)}&type=video&videoCategoryId=26&key=${API_KEY}`
       );
       const data = await response.json();
       
@@ -126,7 +127,7 @@ export default function VideosPage({ darkMode }) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && searchYouTube()}
-                placeholder="Search for videos..."
+                placeholder="Search survival, medical, emergency videos..."
                 className={`w-full pl-10 pr-4 py-3 rounded-lg ${
                   darkMode 
                     ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' 

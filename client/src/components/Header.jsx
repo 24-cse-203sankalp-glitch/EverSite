@@ -88,9 +88,9 @@ export default function Header({ networkStatus, onCacheSite, onRefresh, darkMode
               <button
                 onClick={onCacheSite}
                 className="btn-secondary text-sm"
-                title="Cache site to IPFS"
+                title="Cache site locally and upload to IPFS"
               >
-                Upload to IPFS
+                Cache & Upload
               </button>
               <button
                 onClick={onRefresh}

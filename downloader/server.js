@@ -19,23 +19,29 @@ app.get('/', (req, res) => {
 
 app.post('/download', async (req, res) => {
   const { videoId } = req.body;
+  if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+    return res.status(400).json({ success: false, error: 'Invalid video ID' });
+  }
+
   const videoPath = path.join(VIDEOS_DIR, `${videoId}.mp4`);
-  
+
   if (fs.existsSync(videoPath)) {
     return res.json({ success: true, message: 'Already downloaded' });
   }
 
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  const command = `python -m yt_dlp -f "best[height<=480]" -o "${videoPath}" "${videoUrl}"`;
-  
+  // Use short path to avoid spaces issues, add --no-playlist and extractor-retries
+  const command = `python -m yt_dlp --no-playlist --extractor-retries 3 -f "best[height<=480]/best" -o "${videoPath}" "${videoUrl}"`;
+
   console.log('Downloading:', videoUrl);
-  
-  exec(command, (error, stdout, stderr) => {
+
+  exec(command, { timeout: 300000 }, (error, stdout, stderr) => {
     if (error) {
-      console.error('Download error:', error);
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('Download error:', stderr || error.message);
+      // Clean up partial file
+      if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+      return res.status(500).json({ success: false, error: stderr || error.message });
     }
-    
     console.log('Download complete:', videoId);
     res.json({ success: true, message: 'Downloaded successfully' });
   });

@@ -1,65 +1,49 @@
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, AlertCircle, Download, Upload, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 
-export default function ToastNotification({ notifications, onDismiss, darkMode }) {
+// Only shows toasts for notifications added after mount — auto-dismisses after 5s
+export default function ToastNotification({ notifications, darkMode }) {
+  const [toasts, setToasts] = useState([]);
+  const [seenIds] = useState(() => new Set());
+
+  useEffect(() => {
+    if (!notifications.length) return;
+    const latest = notifications[0];
+    if (seenIds.has(latest.id)) return;
+    seenIds.add(latest.id);
+    setToasts(prev => [...prev, latest]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== latest.id));
+    }, 5000);
+  }, [notifications]);
+
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
       <AnimatePresence>
-        {notifications.map((notification) => (
+        {toasts.map(t => (
           <motion.div
-            key={notification.id}
-            initial={{ opacity: 0, x: 100, scale: 0.8 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 100, scale: 0.8 }}
-            className={`${
-              darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-            } border rounded-lg shadow-lg min-w-[320px] p-4 ${
-              notification.type === 'success' ? darkMode ? 'border-green-700' : 'border-green-200' :
-              notification.type === 'error' ? darkMode ? 'border-red-700' : 'border-red-200' :
-              notification.type === 'download' ? darkMode ? 'border-blue-700' : 'border-blue-200' :
-              darkMode ? 'border-purple-700' : 'border-purple-200'
+            key={t.id}
+            initial={{ opacity: 0, x: 80 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 80 }}
+            className={`pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border min-w-[280px] max-w-xs ${
+              darkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'
             }`}
           >
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                {notification.type === 'success' && (
-                  <div className={`w-8 h-8 ${darkMode ? 'bg-green-900' : 'bg-green-100'} rounded-full flex items-center justify-center`}>
-                    <CheckCircle className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
-                  </div>
-                )}
-                {notification.type === 'error' && (
-                  <div className={`w-8 h-8 ${darkMode ? 'bg-red-900' : 'bg-red-100'} rounded-full flex items-center justify-center`}>
-                    <AlertCircle className={`w-5 h-5 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
-                  </div>
-                )}
-                {notification.type === 'download' && (
-                  <div className={`w-8 h-8 ${darkMode ? 'bg-blue-900' : 'bg-blue-100'} rounded-full flex items-center justify-center`}>
-                    <Download className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'} animate-bounce`} />
-                  </div>
-                )}
-                {notification.type === 'upload' && (
-                  <div className={`w-8 h-8 ${darkMode ? 'bg-purple-900' : 'bg-purple-100'} rounded-full flex items-center justify-center`}>
-                    <Upload className={`w-5 h-5 ${darkMode ? 'text-purple-400' : 'text-purple-600'} animate-bounce`} />
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex-1">
-                <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {notification.title}
-                </p>
-                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {notification.message}
-                </p>
-              </div>
-              
-              <button
-                onClick={() => onDismiss(notification.id)}
-                className={`flex-shrink-0 ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'} transition-colors`}
-              >
-                <X className="w-4 h-4" />
-              </button>
+            {t.type === 'success' && <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />}
+            {t.type === 'error'   && <AlertCircle  className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />}
+            {!['success','error'].includes(t.type) && <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />}
+            <div className="flex-1">
+              <p className="text-xs font-semibold">{t.title}</p>
+              {t.message && <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t.message}</p>}
             </div>
+            <button
+              onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
+              className={`flex-shrink-0 ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </motion.div>
         ))}
       </AnimatePresence>

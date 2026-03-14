@@ -1,4 +1,4 @@
-import { BookOpen, Heart, Wrench, MessageSquare, Shield, Globe, FileText, AlertTriangle, Video, Database } from 'lucide-react';
+import { BookOpen, Heart, Wrench, MessageSquare, Shield, Globe, FileText, AlertTriangle, Video, Database, Map, Bot, Lock, Settings, Phone } from 'lucide-react';
 
 const navigationItems = [
   { id: 'wiki', label: 'Wiki', icon: BookOpen, color: 'blue' },
@@ -43,6 +43,30 @@ export default function Sidebar({ activeSection, onSectionChange, onOpenChat, da
 
         <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
           <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2">
+            Tools
+          </h2>
+          {[
+            { id: 'map', label: 'Offline Map', icon: Map, color: 'text-emerald-500' },
+            { id: 'ai', label: 'AI Assistant', icon: Bot, color: 'text-violet-500' },
+            { id: 'vault', label: 'Secure Vault', icon: Lock, color: 'text-amber-500' },
+          ].map(({ id, label, icon: Icon, color }) => (
+            <button
+              key={id}
+              onClick={() => onSectionChange(id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                activeSection === id
+                  ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900'
+              }`}
+            >
+              <Icon className={`w-5 h-5 ${activeSection === id ? 'text-blue-600 dark:text-blue-400' : color}`} />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2">
             Decentralized
           </h2>
           <button
@@ -70,13 +94,36 @@ export default function Sidebar({ activeSection, onSectionChange, onOpenChat, da
           >
             <MessageSquare className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             P2P Chat
-            <span className="ml-auto bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full">
-              Secure
-            </span>
+            <span className="ml-auto bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full">Secure</span>
+          </button>
+          <button
+            onClick={() => onSectionChange('call')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeSection === 'call'
+                ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900'
+            }`}
+          >
+            <Phone className={`w-5 h-5 ${activeSection === 'call' ? 'text-blue-600 dark:text-blue-400' : 'text-green-500'}`} />
+            Voice / Video Call
           </button>
         </div>
 
-        <div className="mt-6 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+          <button
+            onClick={() => onSectionChange('settings')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeSection === 'settings'
+                ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900'
+            }`}
+          >
+            <Settings className={`w-5 h-5 ${activeSection === 'settings' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} />
+            Settings
+          </button>
+        </div>
+
+        <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
             <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Blockchain Secured</p>

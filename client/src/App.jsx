@@ -12,9 +12,16 @@ import ResourcesPage from './pages/ResourcesPage';
 import LegalPage from './pages/LegalPage';
 import VideosPage from './pages/VideosPage';
 import IPFSPage from './pages/IPFSPage';
+import MapPage from './pages/MapPage';
+import AIChatPage from './pages/AIChatPage';
+import VaultPage from './pages/VaultPage';
+import SettingsPage from './pages/SettingsPage';
+import CallPage from './pages/CallPage';
 import EverSiteCore from './core/EverSiteCore';
 import P2PLoader from './core/P2PLoader';
 import IPFSManager from './core/IPFSManager';
+import GlobalSearch from './components/GlobalSearch';
+import NotificationCenter, { useNotifications } from './components/NotificationCenter';
 
 function App() {
   const [networkStatus, setNetworkStatus] = useState({
@@ -24,16 +31,18 @@ function App() {
     peerId: null,
     ipfsHash: null
   });
-  const [notifications, setNotifications] = useState([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [darkMode, setDarkMode] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { notifications, add: addNotif, markAllRead, clear: clearNotifs, remove: removeNotif } = useNotifications();
 
   useEffect(() => {
     initEverSite();
     registerServiceWorker();
     setupP2PListener();
     initIPFS();
+    setTimeout(() => addNotif('info', 'Welcome to EverSite', 'Offline-first survival platform ready.'), 500);
     
     const savedTheme = localStorage.getItem('darkMode');
     if (savedTheme) {
@@ -70,7 +79,6 @@ function App() {
             }
           } catch (error) {
             console.error('Failed to load from P2P:', error);
-            addNotification('error', 'P2P Failed', 'Could not load from peers');
           }
         }
       });
@@ -78,12 +86,10 @@ function App() {
   };
 
   const addNotification = (type, title, message) => {
-    // Notifications disabled
+    addNotif(type, title, message);
   };
 
-  const dismissNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  const dismissNotification = (id) => {};
 
   const initEverSite = async () => {
     const success = await EverSiteCore.init();
@@ -100,11 +106,13 @@ function App() {
       EverSiteCore.on('peer-connected', () => {
         const stats = EverSiteCore.getStats();
         setNetworkStatus(prev => ({ ...prev, connectedPeers: stats.connectedPeers }));
+        addNotif('peer_join', 'Peer connected', `A new peer joined the network`);
       });
 
       EverSiteCore.on('peer-disconnected', () => {
         const stats = EverSiteCore.getStats();
         setNetworkStatus(prev => ({ ...prev, connectedPeers: stats.connectedPeers }));
+        addNotif('peer_leave', 'Peer disconnected', `A peer left the network`);
       });
 
       EverSiteCore.on('peer-id', (id) => {
@@ -139,17 +147,15 @@ function App() {
   };
 
   const handleCacheSite = async () => {
-    console.log('Starting cache and IPFS upload...');
     await EverSiteCore.cacheCurrentSite();
-    
+  };
+
+  const handleIPFSUpload = async () => {
     const result = await IPFSManager.uploadSite();
-    console.log('IPFS upload result:', result);
-    
     if (result.success) {
       setNetworkStatus(prev => ({ ...prev, ipfsHash: result.hash }));
       setActiveSection('ipfs');
     } else {
-      console.error('IPFS upload failed:', result.error);
       alert('IPFS upload failed: ' + result.error);
     }
   };
@@ -158,10 +164,15 @@ function App() {
     window.location.reload();
   };
 
+  const handleSearchOpen = (section) => {
+    if (section === '__search_open__') setSearchOpen(true);
+    else { setActiveSection(section); setSearchOpen(false); }
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'home':
-        return <HomePage darkMode={darkMode} onNavigate={setActiveSection} />;
+        return <HomePage darkMode={darkMode} onNavigate={setActiveSection} onOpenChat={() => setIsChatOpen(true)} peerCount={networkStatus.peerCount} connectedPeers={networkStatus.connectedPeers} />;
       case 'wiki':
         return <WikiPage darkMode={darkMode} />;
       case 'medical':
@@ -178,6 +189,16 @@ function App() {
         return <VideosPage darkMode={darkMode} />;
       case 'ipfs':
         return <IPFSPage darkMode={darkMode} />;
+      case 'map':
+        return <MapPage darkMode={darkMode} />;
+      case 'ai':
+        return <AIChatPage darkMode={darkMode} />;
+      case 'vault':
+        return <VaultPage darkMode={darkMode} />;
+      case 'call':
+        return <CallPage darkMode={darkMode} />;
+      case 'settings':
+        return <SettingsPage darkMode={darkMode} />;
       default:
         return <HomePage darkMode={darkMode} onNavigate={setActiveSection} />;
     }
@@ -187,6 +208,7 @@ function App() {
     <div className={darkMode ? 'dark' : ''}>
       <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors">
         <ToastNotification notifications={notifications} onDismiss={dismissNotification} darkMode={darkMode} />
+        <GlobalSearch darkMode={darkMode} onNavigate={handleSearchOpen} isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
         <P2PChat 
           isOpen={isChatOpen} 
           onClose={() => setIsChatOpen(false)}
@@ -197,10 +219,17 @@ function App() {
         <Header 
           networkStatus={networkStatus}
           onCacheSite={handleCacheSite}
+          onIPFSUpload={handleIPFSUpload}
           onRefresh={handleRefresh}
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
           onNavigateHome={() => setActiveSection('home')}
+          onOpenSearch={() => setSearchOpen(true)}
+          onOpenSettings={() => setActiveSection('settings')}
+          notifications={notifications}
+          onMarkAllRead={markAllRead}
+          onClearNotifs={clearNotifs}
+          onRemoveNotif={removeNotif}
         />
 
         <div className="flex">
@@ -211,7 +240,7 @@ function App() {
             darkMode={darkMode}
           />
 
-          <main className="flex-1 p-8 dark:bg-black">
+          <main className={`flex-1 min-h-0 overflow-auto dark:bg-black ${['map','ai','vault'].includes(activeSection) ? '' : 'p-8'}`}>
             {renderContent()}
           </main>
         </div>

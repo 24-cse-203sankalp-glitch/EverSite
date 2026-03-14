@@ -5,25 +5,18 @@
     {
       "src": "package.json",
       "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "config": { "distDir": "dist" }
     }
   ],
   "routes": [
     {
       "src": "/service-worker.js",
       "dest": "/service-worker.js",
-      "headers": {
-        "Service-Worker-Allowed": "/"
-      }
+      "headers": { "Service-Worker-Allowed": "/" }
     },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/(.*)", "dest": "/index.html" }
   ],
   "env": {
-    "VITE_SIGNALING_SERVER": "https://eversite-server.vercel.app"
+    "VITE_SIGNALING_SERVER": "https://eversite-server.onrender.com"
   }
 }

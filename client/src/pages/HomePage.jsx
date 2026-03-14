@@ -61,13 +61,12 @@ export default function HomePage({ darkMode, onNavigate, onOpenChat, peerCount, 
       pos => {
         const { latitude: lat, longitude: lon } = pos.coords;
         setLocation({ lat, lon });
+        // Always fetch fresh when we get real GPS — clear any cached default-location weather
+        localStorage.removeItem('eversite-weather');
         fetchWeather(lat, lon);
       },
-      () => {
-        // Default to New York if no permission
-        fetchWeather(40.7128, -74.0060);
-      },
-      { timeout: 8000 }
+      () => fetchWeather(40.7128, -74.0060),
+      { timeout: 8000, enableHighAccuracy: true }
     );
   }, []);
 
@@ -76,8 +75,11 @@ export default function HomePage({ darkMode, onNavigate, onOpenChat, peerCount, 
     try {
       const cached = localStorage.getItem('eversite-weather');
       if (cached) {
-        const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < 30 * 60 * 1000) { setWeather(data); setWeatherLoading(false); return; }
+        const { data, ts, lat: cachedLat, lon: cachedLon } = JSON.parse(cached);
+        const sameLocation = Math.abs((cachedLat||0) - lat) < 0.1 && Math.abs((cachedLon||0) - lon) < 0.1;
+        if (sameLocation && Date.now() - ts < 30 * 60 * 1000) {
+          setWeather(data); setWeatherLoading(false); return;
+        }
       }
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,visibility&wind_speed_unit=mph&temperature_unit=celsius`;
       const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
@@ -89,7 +91,7 @@ export default function HomePage({ darkMode, onNavigate, onOpenChat, peerCount, 
         code: json.current.weather_code,
         visibility: json.current.visibility,
       };
-      localStorage.setItem('eversite-weather', JSON.stringify({ data, ts: Date.now() }));
+      localStorage.setItem('eversite-weather', JSON.stringify({ data, ts: Date.now(), lat, lon }));
       setWeather(data);
     } catch {
       const cached = localStorage.getItem('eversite-weather');

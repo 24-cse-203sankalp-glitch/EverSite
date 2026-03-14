@@ -17,6 +17,7 @@
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "env": {
-    "VITE_SIGNALING_SERVER": "https://eversite-server.onrender.com"
+    "VITE_SIGNALING_SERVER": "https://eversite.onrender.com",
+    "VITE_VIDEO_SERVER_URL": "https://eversite.onrender.com"
   }
 }

@@ -24,7 +24,7 @@ class IPFSManager {
 
     // 2. Fall back to Infura
     try {
-      const auth = 'Basic ' + btoa('2VxJYKLZ8QqGvVXhZ9K9qQqGvVX:e33ef09bd9bb4448a7f15e95580e20aa');
+      const auth = 'Basic ' + btoa('e33ef09bd9bb4448a7f15e95580e20aa:BOemkAQTTng0uYV752fpS9TJh5E2EwuajhQ/HsXKcRGZm6BWtMOZ1w');
       this.client = create({
         host: 'ipfs.infura.io',
         port: 5001,

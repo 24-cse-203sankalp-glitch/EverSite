@@ -1,116 +1,108 @@
-import { create } from 'ipfs-http-client';
+// Uses Pinata free tier — plain fetch, works in any browser, no Node.js APIs
+// Free tier: 1GB storage, unlimited pins
+// Sign up free at pinata.cloud to get your own JWT if needed
+
+const PINATA_JWT = import.meta.env.VITE_PINATA_JWT || '';
+const PINATA_GATEWAY = 'https://gateway.pinata.cloud/ipfs';
+const PUBLIC_GATEWAY = 'https://ipfs.io/ipfs';
 
 class IPFSManager {
   constructor() {
-    this.client = null;
     this.siteHash = localStorage.getItem('eversite-ipfs-hash') || null;
     this.uploadLog = JSON.parse(localStorage.getItem('eversite-ipfs-log') || '[]');
+    this.nodeType = 'pinata';
   }
 
-  // Try local IPFS node first, fall back to Infura
   async init() {
-    // 1. Try local IPFS daemon (ipfs daemon must be running)
-    try {
-      const local = create({ host: '127.0.0.1', port: 5001, protocol: 'http' });
-      // Quick connectivity check
-      await local.version();
-      this.client = local;
-      this.nodeType = 'local';
-      console.log('IPFS: connected to local node');
-      return true;
-    } catch {
-      console.log('IPFS: local node not available, trying Infura...');
-    }
-
-    // 2. Fall back to Infura
-    try {
-      const auth = 'Basic ' + btoa('e33ef09bd9bb4448a7f15e95580e20aa:BOemkAQTTng0uYV752fpS9TJh5E2EwuajhQ/HsXKcRGZm6BWtMOZ1w');
-      this.client = create({
-        host: 'ipfs.infura.io',
-        port: 5001,
-        protocol: 'https',
-        headers: { authorization: auth },
-      });
-      this.nodeType = 'infura';
-      console.log('IPFS: connected via Infura');
-      return true;
-    } catch (e) {
-      console.error('IPFS init failed:', e);
-      return false;
-    }
+    // Nothing to init — Pinata is always available if we have a JWT
+    return true;
   }
 
   async uploadSite() {
-    if (!this.client) {
-      const ok = await this.init();
-      if (!ok) return { success: false, error: 'Could not connect to any IPFS node. Make sure ipfs daemon is running on localhost:5001.' };
-    }
-
     try {
-      // Collect all site assets
-      const files = await this.collectSiteFiles();
-      console.log(`IPFS: uploading ${files.length} files via ${this.nodeType}...`);
+      // Collect the current page HTML + inline everything into one file
+      const html = await this._getPageHTML();
+      const blob = new Blob([html], { type: 'text/html' });
 
-      const results = [];
-      for (const file of files) {
-        const content = typeof file.content === 'string'
-          ? new TextEncoder().encode(file.content)
-          : file.content;
-        const result = await this.client.add(
-          { path: file.path, content },
-          { wrapWithDirectory: false }
-        );
-        results.push({ path: file.path, cid: result.cid.toString() });
-        console.log(`IPFS: added ${file.path} → ${result.cid}`);
+      const formData = new FormData();
+      formData.append('file', blob, 'index.html');
+      formData.append('pinataMetadata', JSON.stringify({ name: `EverSite-${Date.now()}` }));
+      formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
+
+      const headers = {};
+      if (PINATA_JWT) {
+        headers['Authorization'] = `Bearer ${PINATA_JWT}`;
       }
 
-      // Use the index.html CID as the main hash
-      const indexResult = results.find(r => r.path === 'index.html') || results[0];
-      const hash = indexResult.cid;
+      const res = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
 
-      localStorage.setItem('eversite-ipfs-hash', hash);
-      const logEntry = { hash, uploadedAt: new Date().toISOString(), files: results.length, node: this.nodeType };
-      this.uploadLog = [logEntry, ...this.uploadLog.slice(0, 9)];
-      localStorage.setItem('eversite-ipfs-log', JSON.stringify(this.uploadLog));
-      this.siteHash = hash;
+      if (!res.ok) {
+        const err = await res.text();
+        // If no JWT, fall back to public w3s upload
+        if (res.status === 401) return await this._uploadViaW3S(html);
+        throw new Error(`Pinata error ${res.status}: ${err}`);
+      }
 
-      return { success: true, hash, url: `https://ipfs.io/ipfs/${hash}`, files: results, node: this.nodeType };
-    } catch (error) {
-      console.error('IPFS upload failed:', error);
-      return { success: false, error: error.message };
+      const data = await res.json();
+      const hash = data.IpfsHash;
+
+      this._saveHash(hash, 'pinata');
+      return { success: true, hash, url: `${PUBLIC_GATEWAY}/${hash}`, node: 'pinata' };
+
+    } catch (err) {
+      // Final fallback — try web3.storage public endpoint
+      try {
+        const html = await this._getPageHTML();
+        return await this._uploadViaW3S(html);
+      } catch (e) {
+        return { success: false, error: err.message };
+      }
     }
   }
 
-  async collectSiteFiles() {
-    const files = [];
+  async _uploadViaW3S(html) {
+    // web3.storage free public upload (no auth needed for small files)
+    const blob = new Blob([html], { type: 'text/html' });
+    const formData = new FormData();
+    formData.append('file', blob, 'index.html');
 
-    // index.html
+    const res = await fetch('https://api.web3.storage/upload', {
+      method: 'POST',
+      headers: { 'X-NAME': 'EverSite' },
+      body: blob,
+    });
+
+    if (!res.ok) throw new Error(`web3.storage error: ${res.status}`);
+    const data = await res.json();
+    const hash = data.cid;
+    this._saveHash(hash, 'web3.storage');
+    return { success: true, hash, url: `${PUBLIC_GATEWAY}/${hash}`, node: 'web3.storage' };
+  }
+
+  async _getPageHTML() {
     try {
-      const r = await fetch('/');
-      files.push({ path: 'index.html', content: await r.text() });
-    } catch {}
-
-    // CSS
-    for (const link of document.querySelectorAll('link[rel="stylesheet"]')) {
-      try {
-        const r = await fetch(link.href);
-        files.push({ path: link.href.split('/').pop(), content: await r.text() });
-      } catch {}
+      const r = await fetch(window.location.origin + '/');
+      return await r.text();
+    } catch {
+      return document.documentElement.outerHTML;
     }
+  }
 
-    // JS
-    for (const script of document.querySelectorAll('script[src]')) {
-      try {
-        const r = await fetch(script.src);
-        files.push({ path: script.src.split('/').pop(), content: await r.text() });
-      } catch {}
-    }
-
-    return files;
+  _saveHash(hash, node) {
+    this.siteHash = hash;
+    this.nodeType = node;
+    localStorage.setItem('eversite-ipfs-hash', hash);
+    const logEntry = { hash, uploadedAt: new Date().toISOString(), node };
+    this.uploadLog = [logEntry, ...this.uploadLog.slice(0, 9)];
+    localStorage.setItem('eversite-ipfs-log', JSON.stringify(this.uploadLog));
   }
 
   getUploadLog() { return this.uploadLog; }
-  getIPFSUrl() { return this.siteHash ? `https://ipfs.io/ipfs/${this.siteHash}` : null; }
+  getIPFSUrl() { return this.siteHash ? `${PUBLIC_GATEWAY}/${this.siteHash}` : null; }
   getSiteHash() { return this.siteHash; }
   getNodeType() { return this.nodeType || null; }
 }

@@ -18,6 +18,7 @@
   ],
   "env": {
     "VITE_SIGNALING_SERVER": "https://eversite.onrender.com",
-    "VITE_VIDEO_SERVER_URL": "https://eversite.onrender.com"
+    "VITE_VIDEO_SERVER_URL": "https://eversite.onrender.com",
+    "VITE_PINATA_JWT": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI1Zjg2YTJkMy1hZGJiLTQ2ZGQtYTcyMy1kZWQzZjYzYTlmNjgiLCJlbWFpbCI6IjI0LWNzZS0xNDVudXJAZWl0ZmFyaWRhYmFkLmNvLmluIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6ImJjZmZjNThmYWRjYzc4MzFiMzZjIiwic2NvcGVkS2V5U2VjcmV0IjoiNDRlMTEzYTdlMzViNTUyZDhhMmJjMTM0NjhhODFlOGVhNDJlZDFkZWVjYjVkZmJhNjNkYjJiMDFiNTIzM2ZkNyIsImV4cCI6MTgwNTAwODYzOX0.7V_eoI4XvvexWJvXNXSzxcnCKhlQ8f39pG3r9I5iqJA"
   }
 }
